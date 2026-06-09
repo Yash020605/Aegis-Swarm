@@ -1,0 +1,25 @@
+# ──────────────────────────────────────────────────────────────────────
+# AEGIS Swarm Engine — Python Dependencies  (Python 3.14, Windows)
+# Install: py -m pip install -r requirements.txt
+# ──────────────────────────────────────────────────────────────────────
+
+# ── Core Web Framework ────────────────────────────────────────────────
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+websockets==13.1
+
+# ── Task 3: JWT Authentication ────────────────────────────────────────
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.12
+
+# ── Env file loading ──────────────────────────────────────────────────
+python-dotenv==1.0.1
+
+# ── Task 1: Groq SDK (direct — Python 3.14 compatible) ───────────────
+# langchain-core has a pydantic.v1 shim that hangs on Python 3.14.
+# We use the groq SDK directly instead.
+groq>=0.9.0
+
+# ── Task 2: Edge Vision (run standalone, not needed by the API server) ─
+# py -m pip install ultralytics opencv-python

@@ -1,0 +1,129 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --cyan: #00f5ff;
+  --cyan-dim: #00bcd4;
+  --green: #39ff14;
+  --red: #ff2020;
+  --amber: #ffaa00;
+  --panel-bg: #0d1117;
+  --border-color: #1a2a3a;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-mono), "Courier New", Courier, monospace;
+  overflow: hidden;
+}
+
+/* ── Scrollbars ─────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: #0d1117;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e3a4a;
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--cyan-dim);
+}
+
+/* ── Glow utilities ─────────────────────────────────────────── */
+.glow-cyan {
+  text-shadow: 0 0 8px var(--cyan), 0 0 20px var(--cyan);
+}
+.glow-green {
+  text-shadow: 0 0 8px var(--green), 0 0 20px var(--green);
+}
+.glow-red {
+  text-shadow: 0 0 8px var(--red), 0 0 20px var(--red);
+}
+
+/* ── Scanline overlay ───────────────────────────────────────── */
+.scanlines::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 3px,
+    rgba(0, 0, 0, 0.08) 3px,
+    rgba(0, 0, 0, 0.08) 4px
+  );
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* ── Blink animation ─────────────────────────────────────────── */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.1; }
+}
+.animate-blink {
+  animation: blink 0.8s ease-in-out infinite;
+}
+
+/* ── Pulse ring ─────────────────────────────────────────────── */
+@keyframes ping-slow {
+  0%   { transform: scale(1);   opacity: 0.8; }
+  75%  { transform: scale(2.5); opacity: 0; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+.animate-ping-slow {
+  animation: ping-slow 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* ── Radar sweep ────────────────────────────────────────────── */
+@keyframes radar-sweep {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.radar-sweep {
+  animation: radar-sweep 4s linear infinite;
+  transform-origin: 0% 100%;
+}
+
+/* ── Terminal cursor ─────────────────────────────────────────── */
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+.terminal-cursor::after {
+  content: "█";
+  animation: cursor-blink 1s step-end infinite;
+  color: var(--cyan);
+}
+
+/* ── Drone trail effect ─────────────────────────────────────── */
+@keyframes trail-fade {
+  from { opacity: 0.6; }
+  to   { opacity: 0; }
+}
