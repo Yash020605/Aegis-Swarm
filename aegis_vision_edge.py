@@ -39,7 +39,7 @@ CORNER_THICKNESS   = 3
 FONT               = cv2.FONT_HERSHEY_SIMPLEX
 FONT_SCALE         = 0.52
 FONT_THICKNESS     = 1
-CONF_THRESHOLD     = 0.45          # minimum confidence to show a box
+CONF_THRESHOLD     = 0.65          # minimum confidence to show a box (spec: ≥ 0.65)
 PERSON_CLASS_ID    = 0             # COCO class 0 = "person"
 MODEL_WEIGHTS      = "yolov8n.pt"  # nano — fastest; swap for yolov8s/m for accuracy
 

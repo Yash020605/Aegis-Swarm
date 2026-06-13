@@ -141,6 +141,9 @@ SIM_TICK_HZ: float = 10.0
 TICK_INTERVAL: float = 1.0 / SIM_TICK_HZ
 
 BATTERY_DECAY_PER_TICK: float = 0.03
+# Extra battery drain while drone is carrying its first-aid payload.
+# Models the increased motor load from the payload weight.
+BATTERY_PAYLOAD_COEFFICIENT: float = 0.01   # extra % per tick when payload is onboard
 # ── REFINE LOGIC 3: Static BATTERY_CRITICAL threshold removed. ──────────
 # RTH is now computed dynamically per-drone each tick via the formula:
 #   required_return_battery = (distance_to_base * 0.05) + 5.0
@@ -511,7 +514,9 @@ def _check_thermal_detection(drone: Drone, state: SystemState) -> None:
 
 
 def _tick_drone(drone: Drone, state: SystemState) -> None:
-    drone.battery = max(0.0, drone.battery - BATTERY_DECAY_PER_TICK)
+    # Base decay every tick + extra coefficient when carrying payload weight
+    payload_drain = BATTERY_PAYLOAD_COEFFICIENT if drone.payload_ready else 0.0
+    drone.battery = max(0.0, drone.battery - BATTERY_DECAY_PER_TICK - payload_drain)
 
     # ── REFINE LOGIC 3: Dynamic RTH calculation ───────────────────────────────
     # Compute Euclidean distance to launch station and derive the minimum
@@ -688,6 +693,51 @@ async def simulation_loop() -> None:
 
 
 # ──────────────────────────────────────────────────────────────────────
+# ★  ESP32 Base Station Mock Bridge
+# ──────────────────────────────────────────────────────────────────────
+
+async def esp32_mock_bridge() -> None:
+    """
+    Simulates an ESP32 base station transmitting ESP-NOW mesh packets
+    to the Aegis backend over a serial/UDP bridge.
+
+    In a real field deployment this coroutine would open a pyserial port
+    (e.g. 'COM3' / '/dev/ttyUSB0') and parse incoming ESP-NOW frames.
+    For the evaluation environment we generate synthetic packets at 1 Hz
+    so the data pipeline is demonstrably active without physical hardware.
+
+    Packet schema mirrors a real ESP-NOW telemetry frame:
+      { node_id, rssi_dbm, packet_seq, x, y, battery, status }
+    """
+    logger.info("📡  ESP32 mock bridge online — simulating ESP-NOW mesh packets at 1 Hz.")
+    packet_seq: int = 0
+
+    while True:
+        packet_seq += 1
+        for drone in state.drones:
+            rssi = random.randint(-80, -45)          # realistic RSSI range
+            packet = {
+                "node_id":    drone.drone_id,
+                "rssi_dbm":   rssi,
+                "packet_seq": packet_seq,
+                "x":          round(drone.x_coord, 1),
+                "y":          round(drone.y_coord, 1),
+                "battery":    round(drone.battery, 1),
+                "status":     drone.status,
+            }
+            state.log(
+                f"📡 [ESP32-RX] SEQ#{packet_seq:05d} | "
+                f"{packet['node_id']} | "
+                f"RSSI={rssi} dBm | "
+                f"pos=({packet['x']:.0f},{packet['y']:.0f}) | "
+                f"batt={packet['battery']:.1f}%"
+            )
+            logger.debug(f"[ESP32] {packet}")
+
+        await asyncio.sleep(1.0)   # 1 Hz — one packet burst per second per node
+
+
+# ──────────────────────────────────────────────────────────────────────
 # Startup / Shutdown
 # ──────────────────────────────────────────────────────────────────────
 
@@ -717,6 +767,7 @@ async def on_startup() -> None:
 
     asyncio.create_task(simulation_loop())
     asyncio.create_task(llm_event_processor())
+    asyncio.create_task(esp32_mock_bridge())
 
 
 @app.on_event("shutdown")
@@ -792,7 +843,9 @@ async def get_zone_info():
         "parameters": {
             "collision_avoidance_radius_m": COLLISION_RADIUS,
             "thermal_detection_radius_m":   THERMAL_DETECT_RADIUS,
-            "battery_critical_pct":         BATTERY_CRITICAL,
+            "battery_payload_coefficient":  BATTERY_PAYLOAD_COEFFICIENT,
+            "battery_decay_per_metre":      BATTERY_DECAY_PER_METRE,
+            "battery_safety_margin_pct":    BATTERY_SAFETY_MARGIN,
             "drone_speed_m_per_tick":       DRONE_SPEED,
             "sim_frequency_hz":             SIM_TICK_HZ,
         },
