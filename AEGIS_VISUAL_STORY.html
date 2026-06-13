@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AEGIS Swarm — Visual Story</title>
+<style>
+  /* ── Reset & Base ───────────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --cyan:    #00f5ff;
+    --green:   #39ff14;
+    --amber:   #f59e0b;
+    --red:     #ff2020;
+    --violet:  #a78bfa;
+    --bg:      #060a0f;
+    --bg2:     #0a0e18;
+    --bg3:     #0d1520;
+    --border:  rgba(0,245,255,0.15);
+    --text:    #d0e8f0;
+    --dim:     rgba(0,245,255,0.35);
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Courier New', Courier, monospace;
+    overflow-x: hidden;
+    line-height: 1.6;
+  }
+  ::selection { background: rgba(0,245,255,0.25); }
+
+  /* ── Scrollbar ──────────────────────────────────────────────────── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: rgba(0,245,255,0.25); border-radius: 3px; }
+
+  /* ── Canvas starfield ───────────────────────────────────────────── */
+  #starfield {
+    position: fixed; inset: 0; z-index: 0;
+    pointer-events: none;
+  }
+
+  /* ── Layout wrapper ─────────────────────────────────────────────── */
+  .page { position: relative; z-index: 1; }
+
+  /* ── Navigation ─────────────────────────────────────────────────── */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 32px;
+    background: rgba(6,10,15,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; font-weight: 700;
+    letter-spacing: 0.25em; text-transform: uppercase;
+    color: var(--cyan);
+    text-shadow: 0 0 12px var(--cyan);
+  }
+  .nav-links { display: flex; gap: 24px; list-style: none; }
+  .nav-links a {
+    font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--dim); text-decoration: none;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--cyan); }
+
+  /* ── Hero ───────────────────────────────────────────────────────── */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; padding: 120px 24px 60px;
+    position: relative;
+  }
+  .hero-eyebrow {
+    font-size: 9px; letter-spacing: 0.4em; text-transform: uppercase;
+    color: var(--dim); margin-bottom: 20px;
+  }
+  .hero-title {
+    font-size: clamp(36px, 7vw, 80px);
+    font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase;
+    line-height: 1;
+    color: var(--cyan);
+    text-shadow: 0 0 40px var(--cyan), 0 0 80px rgba(0,245,255,0.3);
+    margin-bottom: 12px;
+  }
+  .hero-sub {
+    font-size: clamp(11px, 1.8vw, 16px);
+    letter-spacing: 0.2em; text-transform: uppercase;
+    color: rgba(0,245,255,0.5); margin-bottom: 40px;
+  }
+  .hero-desc {
+    max-width: 680px;
+    font-size: 14px; line-height: 1.8;
+    color: rgba(208,232,240,0.7);
+    margin-bottom: 48px;
+  }
+  .hero-badges {
+    display: flex; flex-wrap: wrap; gap: 10px;
+    justify-content: center; margin-bottom: 60px;
+  }
+  .badge {
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--dim);
+    background: rgba(0,245,255,0.04);
+  }
+  .scroll-hint {
+    font-size: 9px; letter-spacing: 0.3em; text-transform: uppercase;
+    color: rgba(0,245,255,0.25);
+    animation: bounce 2s infinite;
+  }
+  @keyframes bounce {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(6px); }
+  }
+
+  /* ── Section chrome ─────────────────────────────────────────────── */
+  section {
+    padding: 100px 24px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .section-label {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 48px;
+  }
+  .section-num {
+    font-size: 10px; letter-spacing: 0.3em;
+    color: rgba(0,245,255,0.3);
+    min-width: 36px;
+  }
+  .section-title {
+    font-size: clamp(20px, 3vw, 30px);
+    font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--cyan);
+    text-shadow: 0 0 20px rgba(0,245,255,0.4);
+  }
+  .section-line {
+    flex: 1; height: 1px;
+    background: linear-gradient(90deg, rgba(0,245,255,0.3), transparent);
+  }
+
+  /* ── Full-width divider ─────────────────────────────────────────── */
+  .divider {
+    width: 100%; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(0,245,255,0.2), transparent);
+    margin: 0;
+  }
+
+  /* ── Problem section ────────────────────────────────────────────── */
+  .problem-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+  }
+  .problem-card {
+    border: 1px solid rgba(255,32,32,0.2);
+    background: rgba(255,32,32,0.04);
+    border-radius: 4px;
+    padding: 24px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+  .problem-card:hover {
+    border-color: rgba(255,32,32,0.5);
+    box-shadow: 0 0 24px rgba(255,32,32,0.08);
+  }
+  .problem-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--red), transparent);
+  }
+  .problem-icon { font-size: 28px; margin-bottom: 12px; }
+  .problem-title {
+    font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--red); margin-bottom: 8px;
+  }
+  .problem-text { font-size: 12px; color: rgba(208,232,240,0.6); line-height: 1.7; }
+
+  /* ── Architecture diagram ───────────────────────────────────────── */
+  .arch-diagram {
+    position: relative;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 0;
+  }
+  .arch-layer {
+    width: 100%;
+    display: flex; align-items: stretch; gap: 16px;
+    position: relative;
+  }
+  .arch-connector {
+    width: 2px; height: 40px;
+    background: linear-gradient(180deg, var(--cyan), transparent);
+    margin: 0 auto;
+    position: relative;
+  }
+  .arch-connector::after {
+    content: '▼';
+    position: absolute; bottom: -4px; left: 50%;
+    transform: translateX(-50%);
+    color: var(--cyan); font-size: 10px;
+    text-shadow: 0 0 8px var(--cyan);
+  }
+  .arch-node {
+    flex: 1; border: 1px solid var(--border);
+    background: var(--bg3);
+    border-radius: 4px; padding: 20px 16px;
+    text-align: center;
+    position: relative; overflow: hidden;
+    transition: box-shadow 0.3s, border-color 0.3s;
+    cursor: default;
+  }
+  .arch-node:hover {
+    box-shadow: 0 0 30px rgba(0,245,255,0.1);
+    border-color: rgba(0,245,255,0.4);
+  }
+  .arch-node::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  }
+  .arch-node.cyan::before  { background: linear-gradient(90deg, transparent, var(--cyan),   transparent); }
+  .arch-node.green::before { background: linear-gradient(90deg, transparent, var(--green),  transparent); }
+  .arch-node.amber::before { background: linear-gradient(90deg, transparent, var(--amber),  transparent); }
+  .arch-node.violet::before{ background: linear-gradient(90deg, transparent, var(--violet), transparent); }
+  .arch-node.red::before   { background: linear-gradient(90deg, transparent, var(--red),    transparent); }
+
+  .arch-node-icon { font-size: 26px; margin-bottom: 8px; }
+  .arch-node-title {
+    font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .arch-node.cyan   .arch-node-title { color: var(--cyan); }
+  .arch-node.green  .arch-node-title { color: var(--green); }
+  .arch-node.amber  .arch-node-title { color: var(--amber); }
+  .arch-node.violet .arch-node-title { color: var(--violet); }
+  .arch-node.red    .arch-node-title { color: var(--red); }
+
+  .arch-node-text { font-size: 11px; color: rgba(208,232,240,0.55); line-height: 1.6; }
+  .arch-node-tag {
+    display: inline-block; margin-top: 10px;
+    padding: 3px 8px; border-radius: 2px;
+    font-size: 8px; letter-spacing: 0.15em; text-transform: uppercase;
+    background: rgba(0,245,255,0.08); color: rgba(0,245,255,0.5);
+    border: 1px solid rgba(0,245,255,0.12);
+  }
+
+  /* ── Timeline / flow steps ──────────────────────────────────────── */
+  .flow {
+    display: flex; flex-direction: column; gap: 0;
+    position: relative;
+  }
+  .flow::before {
+    content: '';
+    position: absolute; left: 28px; top: 0; bottom: 0; width: 2px;
+    background: linear-gradient(180deg, var(--cyan), rgba(0,245,255,0.05));
+  }
+  .flow-step {
+    display: flex; gap: 24px; align-items: flex-start;
+    padding: 28px 0;
+    position: relative;
+    opacity: 0; transform: translateX(-20px);
+    transition: opacity 0.5s, transform 0.5s;
+  }
+  .flow-step.visible { opacity: 1; transform: translateX(0); }
+  .flow-dot {
+    width: 58px; height: 58px; flex-shrink: 0;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: var(--bg3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    position: relative; z-index: 1;
+    box-shadow: 0 0 20px rgba(0,245,255,0.06);
+    transition: box-shadow 0.3s, border-color 0.3s;
+  }
+  .flow-step:hover .flow-dot {
+    border-color: var(--cyan);
+    box-shadow: 0 0 20px rgba(0,245,255,0.3);
+  }
+  .flow-content { flex: 1; padding-top: 8px; }
+  .flow-step-num {
+    font-size: 8px; letter-spacing: 0.3em; text-transform: uppercase;
+    color: rgba(0,245,255,0.3); margin-bottom: 4px;
+  }
+  .flow-step-title {
+    font-size: 15px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--cyan); margin-bottom: 8px;
+    text-shadow: 0 0 10px rgba(0,245,255,0.3);
+  }
+  .flow-step-text { font-size: 12px; color: rgba(208,232,240,0.65); line-height: 1.8; }
+  .flow-code {
+    margin-top: 12px;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(0,245,255,0.1);
+    border-radius: 4px;
+    padding: 12px 16px;
+    font-size: 11px; color: #7dd3fc;
+    overflow-x: auto;
+    line-height: 1.6;
+  }
+  .flow-code .kw  { color: #c084fc; }
+  .flow-code .fn  { color: #6ee7b7; }
+  .flow-code .str { color: #fde68a; }
+  .flow-code .cm  { color: rgba(208,232,240,0.3); }
+  .flow-code .num { color: #f9a8d4; }
+
+  /* ── Feature grid ───────────────────────────────────────────────── */
+  .feat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+  }
+  .feat-card {
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    border-radius: 4px;
+    padding: 28px 24px;
+    position: relative; overflow: hidden;
+    transition: box-shadow 0.3s, border-color 0.3s;
+  }
+  .feat-card:hover {
+    box-shadow: 0 0 30px rgba(0,245,255,0.08);
+    border-color: rgba(0,245,255,0.35);
+  }
+  .feat-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  }
+  .feat-icon { font-size: 32px; margin-bottom: 14px; }
+  .feat-title {
+    font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: var(--cyan); margin-bottom: 10px;
+  }
+  .feat-text { font-size: 12px; color: rgba(208,232,240,0.6); line-height: 1.8; }
+  .feat-status {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-top: 14px;
+    padding: 4px 10px; border-radius: 2px;
+    font-size: 8px; letter-spacing: 0.2em; text-transform: uppercase;
+    background: rgba(57,255,20,0.08);
+    border: 1px solid rgba(57,255,20,0.2);
+    color: var(--green);
+  }
+  .feat-status::before {
+    content: ''; width: 6px; height: 6px;
+    border-radius: 50%; background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+  }
+
+  /* ── Security callout ───────────────────────────────────────────── */
+  .security-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+  }
+  .sec-item {
+    border: 1px solid rgba(57,255,20,0.15);
+    background: rgba(57,255,20,0.03);
+    border-radius: 4px;
+    padding: 20px 18px;
+    display: flex; align-items: flex-start; gap: 14px;
+    transition: box-shadow 0.3s;
+  }
+  .sec-item:hover { box-shadow: 0 0 20px rgba(57,255,20,0.06); }
+  .sec-check {
+    color: var(--green); font-size: 18px;
+    text-shadow: 0 0 8px var(--green);
+    flex-shrink: 0; padding-top: 2px;
+  }
+  .sec-title {
+    font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase;
+    color: var(--green); margin-bottom: 6px;
+  }
+  .sec-text { font-size: 11px; color: rgba(208,232,240,0.55); line-height: 1.6; }
+
+  /* ── Stack table ─────────────────────────────────────────────────── */
+  .stack-table {
+    width: 100%; border-collapse: collapse;
+  }
+  .stack-table th, .stack-table td {
+    padding: 14px 20px; text-align: left;
+    border-bottom: 1px solid rgba(0,245,255,0.07);
+    font-size: 12px;
+  }
+  .stack-table th {
+    font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase;
+    color: rgba(0,245,255,0.4);
+    background: rgba(0,245,255,0.03);
+  }
+  .stack-table td:first-child { color: var(--cyan); font-weight: 700; width: 180px; }
+  .stack-table td:nth-child(2) { color: rgba(208,232,240,0.8); }
+  .stack-table td:last-child { color: rgba(208,232,240,0.45); font-size: 11px; }
+  .stack-table tr:hover td { background: rgba(0,245,255,0.02); }
+
+  /* ── Live simulation canvas ─────────────────────────────────────── */
+  .sim-wrap {
+    display: flex; flex-direction: column; align-items: center; gap: 16px;
+  }
+  #simCanvas {
+    border: 1px solid rgba(0,245,255,0.2);
+    border-radius: 4px;
+    box-shadow: 0 0 40px rgba(0,245,255,0.06), inset 0 0 40px rgba(0,0,0,0.5);
+    display: block;
+  }
+  .sim-legend {
+    display: flex; gap: 20px; flex-wrap: wrap; justify-content: center;
+  }
+  .sim-legend-item {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase;
+    color: rgba(208,232,240,0.4);
+  }
+  .sim-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+  }
+
+  /* ── Metric pills ────────────────────────────────────────────────── */
+  .metrics-row {
+    display: flex; flex-wrap: wrap; gap: 16px;
+    margin-bottom: 48px;
+  }
+  .metric-pill {
+    flex: 1; min-width: 140px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    border-radius: 4px;
+    padding: 18px 20px;
+    text-align: center;
+  }
+  .metric-val {
+    font-size: 28px; font-weight: 900;
+    color: var(--cyan);
+    text-shadow: 0 0 16px rgba(0,245,255,0.5);
+    font-variant-numeric: tabular-nums;
+    margin-bottom: 4px;
+  }
+  .metric-lbl {
+    font-size: 8px; letter-spacing: 0.25em; text-transform: uppercase;
+    color: rgba(0,245,255,0.3);
+  }
+
+  /* ── Footer ──────────────────────────────────────────────────────── */
+  footer {
+    border-top: 1px solid var(--border);
+    background: rgba(6,10,15,0.9);
+    padding: 40px 32px;
+    text-align: center;
+  }
+  .footer-title {
+    font-size: 20px; font-weight: 700; letter-spacing: 0.3em; text-transform: uppercase;
+    color: var(--cyan); text-shadow: 0 0 20px rgba(0,245,255,0.4);
+    margin-bottom: 10px;
+  }
+  .footer-sub {
+    font-size: 9px; letter-spacing: 0.3em; text-transform: uppercase;
+    color: rgba(0,245,255,0.25);
+  }
+
+  /* ── Pulse animation ─────────────────────────────────────────────── */
+  @keyframes pulse-glow {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  .pulse { animation: pulse-glow 2s ease-in-out infinite; }
+
+  /* ── Responsive ──────────────────────────────────────────────────── */
+  @media (max-width: 640px) {
+    nav { padding: 12px 16px; }
+    .nav-links { display: none; }
+    section { padding: 60px 16px; }
+    #simCanvas { width: 100%; height: auto; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Starfield -->
+<canvas id="starfield"></canvas>
+
+<!-- Navigation -->
+<nav>
+  <div class="nav-brand">
+    <svg width="24" height="24" viewBox="0 0 36 36" fill="none">
+      <polygon points="18,2 34,32 18,26 2,32" fill="none" stroke="#00f5ff" stroke-width="1.5" stroke-linejoin="round"/>
+      <polygon points="18,10 28,28 18,24 8,28" fill="#00f5ff" fill-opacity="0.15" stroke="#00f5ff" stroke-width="0.8" stroke-linejoin="round"/>
+      <line x1="18" y1="2" x2="18" y2="26" stroke="#00f5ff" stroke-width="0.8" stroke-opacity="0.4"/>
+    </svg>
+    AEGIS SWARM
+  </div>
+  <ul class="nav-links">
+    <li><a href="#problem">Problem</a></li>
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#pipeline">Pipeline</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#simulation">Simulation</a></li>
+    <li><a href="#security">Security</a></li>
+    <li><a href="#stack">Stack</a></li>
+  </ul>
+</nav>
+
+<div class="page">
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     HERO
+════════════════════════════════════════════════════════════════════ -->
+<div class="hero">
+  <p class="hero-eyebrow">Project Aegis · Agentic AI · Disaster Response</p>
+  <h1 class="hero-title">AEGIS SWARM</h1>
+  <p class="hero-sub">Autonomous Drone Swarm for Disaster Response</p>
+  <p class="hero-desc">
+    A fully autonomous multi-drone system that maps calamity zones,
+    detects survivors through thermal signatures, deploys first-aid payloads,
+    and issues AI-generated tactical directives — all in real time over
+    a JWT-secured WebSocket pipeline.
+  </p>
+  <div class="hero-badges">
+    <span class="badge">FastAPI · 10 Hz</span>
+    <span class="badge">LLM Tactical Commander</span>
+    <span class="badge">YOLOv8 Edge Vision</span>
+    <span class="badge">JWT Auth</span>
+    <span class="badge">WebSocket Stream</span>
+    <span class="badge">ESP-NOW Mesh</span>
+    <span class="badge">Next.js Dashboard</span>
+    <span class="badge">Dynamic RTH</span>
+  </div>
+  <span class="scroll-hint">▼ scroll to explore ▼</span>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     PROBLEM
+════════════════════════════════════════════════════════════════════ -->
+<section id="problem">
+  <div class="section-label">
+    <span class="section-num">01</span>
+    <h2 class="section-title">The Problem</h2>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="metrics-row">
+    <div class="metric-pill">
+      <div class="metric-val">72h</div>
+      <div class="metric-lbl">Critical Survival Window</div>
+    </div>
+    <div class="metric-pill">
+      <div class="metric-val">60%</div>
+      <div class="metric-lbl">Casualties From Delayed Response</div>
+    </div>
+    <div class="metric-pill">
+      <div class="metric-val">1km²</div>
+      <div class="metric-lbl">Average Search Zone Per Event</div>
+    </div>
+    <div class="metric-pill">
+      <div class="metric-val pulse" style="color: var(--red); text-shadow: 0 0 16px rgba(255,32,32,0.5);">∞</div>
+      <div class="metric-lbl">Human Risk Without Automation</div>
+    </div>
+  </div>
+
+  <div class="problem-grid">
+    <div class="problem-card">
+      <div class="problem-icon">🌍</div>
+      <div class="problem-title">Inaccessible Terrain</div>
+      <div class="problem-text">Collapsed structures, toxic environments, and unstable ground prevent human search teams from reaching survivors in time.</div>
+    </div>
+    <div class="problem-card">
+      <div class="problem-icon">⏱️</div>
+      <div class="problem-title">Time-Critical Window</div>
+      <div class="problem-text">The first 72 hours are decisive. Manual coordination of search teams across a 1km² calamity zone is too slow and error-prone.</div>
+    </div>
+    <div class="problem-card">
+      <div class="problem-icon">📡</div>
+      <div class="problem-title">No Real-Time Awareness</div>
+      <div class="problem-text">Ground commanders lack live situational awareness. Survivors' locations, drone battery states, and threat zones are all unknown simultaneously.</div>
+    </div>
+    <div class="problem-card">
+      <div class="problem-icon">🧠</div>
+      <div class="problem-title">Decision Overload</div>
+      <div class="problem-text">Human coordinators cannot process multi-drone telemetry, triage survivors, and dispatch medical teams fast enough under crisis stress.</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     ARCHITECTURE
+════════════════════════════════════════════════════════════════════ -->
+<section id="architecture">
+  <div class="section-label">
+    <span class="section-num">02</span>
+    <h2 class="section-title">System Architecture</h2>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="arch-diagram">
+
+    <!-- Layer 0: Hardware -->
+    <div class="arch-layer">
+      <div class="arch-node amber" style="border-color: rgba(245,158,11,0.3);">
+        <div class="arch-node-icon">🚁</div>
+        <div class="arch-node-title" style="color: var(--amber);">Physical Drone Swarm</div>
+        <div class="arch-node-text">Aegis-Alpha (Sector A) · Aegis-Beta (Sector B)<br>1000 × 1000 m Calamity Zone<br>First-aid payload dispensers</div>
+        <span class="arch-node-tag" style="background:rgba(245,158,11,0.08);color:rgba(245,158,11,0.5);border-color:rgba(245,158,11,0.12);">Hardware Layer</span>
+      </div>
+      <div class="arch-node amber" style="border-color: rgba(245,158,11,0.3);">
+        <div class="arch-node-icon">📡</div>
+        <div class="arch-node-title" style="color: var(--amber);">ESP32 Base Station</div>
+        <div class="arch-node-text">ESP-NOW mesh radio<br>1 Hz telemetry packets<br>RSSI: −80 to −45 dBm</div>
+        <span class="arch-node-tag" style="background:rgba(245,158,11,0.08);color:rgba(245,158,11,0.5);border-color:rgba(245,158,11,0.12);">RF Bridge Layer</span>
+      </div>
+      <div class="arch-node red" style="border-color: rgba(255,32,32,0.3);">
+        <div class="arch-node-icon">🎥</div>
+        <div class="arch-node-title" style="color: var(--red);">Edge Vision Node</div>
+        <div class="arch-node-text">YOLOv8n + OpenCV<br>Class 0 · conf ≥ 0.65<br>HUMAN_DETECTED alerts</div>
+        <span class="arch-node-tag" style="background:rgba(255,32,32,0.08);color:rgba(255,32,32,0.5);border-color:rgba(255,32,32,0.12);">Edge AI Layer</span>
+      </div>
+    </div>
+
+    <div class="arch-connector"></div>
+
+    <!-- Layer 1: Backend -->
+    <div class="arch-layer">
+      <div class="arch-node cyan" style="max-width: 100%;">
+        <div class="arch-node-icon">⚙️</div>
+        <div class="arch-node-title">FastAPI Backend · Aegis Agnostic Core OS</div>
+        <div class="arch-node-text">
+          10 Hz async simulation loop · In-memory SystemState · Dynamic RTH calculator<br>
+          Battery decay + payload coefficient · APF collision avoidance vectors<br>
+          JWT auth (python-jose + passlib) · WebSocket connection manager
+        </div>
+        <span class="arch-node-tag">FastAPI · Uvicorn · Asyncio · Python 3.14</span>
+      </div>
+    </div>
+
+    <div class="arch-connector"></div>
+
+    <!-- Layer 2: AI -->
+    <div class="arch-layer">
+      <div class="arch-node violet" style="border-color: rgba(167,139,250,0.3);">
+        <div class="arch-node-icon">🤖</div>
+        <div class="arch-node-title" style="color: var(--violet);">AEGIS-COMMANDER</div>
+        <div class="arch-node-text">Agentic LLM layer<br>SURVIVOR_FOUND → async queue<br>Groq llama-3.3-70b</div>
+        <span class="arch-node-tag" style="background:rgba(167,139,250,0.08);color:rgba(167,139,250,0.5);border-color:rgba(167,139,250,0.12);">Agentic AI Layer</span>
+      </div>
+      <div class="arch-node cyan">
+        <div class="arch-node-icon">🔌</div>
+        <div class="arch-node-title">WebSocket Stream</div>
+        <div class="arch-node-text">ws://host:8000/ws/telemetry<br>JWT bearer token gated<br>Live JSON frames at 10 Hz</div>
+        <span class="arch-node-tag">Real-Time Data Pipeline</span>
+      </div>
+    </div>
+
+    <div class="arch-connector"></div>
+
+    <!-- Layer 3: Frontend -->
+    <div class="arch-layer">
+      <div class="arch-node green" style="border-color: rgba(57,255,20,0.3);">
+        <div class="arch-node-icon">🖥️</div>
+        <div class="arch-node-title" style="color: var(--green);">Aegis Command Dashboard</div>
+        <div class="arch-node-text">
+          Next.js 15 · React · TypeScript<br>
+          Live radar grid · Drone telemetry cards · Mission log<br>
+          Launch station control · JWT login overlay
+        </div>
+        <span class="arch-node-tag" style="background:rgba(57,255,20,0.08);color:rgba(57,255,20,0.5);border-color:rgba(57,255,20,0.12);">Frontend Layer · Vercel</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     EVENT PIPELINE
+════════════════════════════════════════════════════════════════════ -->
+<section id="pipeline">
+  <div class="section-label">
+    <span class="section-num">03</span>
+    <h2 class="section-title">Event Pipeline — From Detection to Directive</h2>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="flow">
+
+    <div class="flow-step">
+      <div class="flow-dot">🔄</div>
+      <div class="flow-content">
+        <div class="flow-step-num">Step 01</div>
+        <div class="flow-step-title">10 Hz Simulation Tick</div>
+        <div class="flow-step-text">
+          The asyncio event loop fires every 100 ms. Each tick advances drone positions via sector sweep,
+          applies battery drain (base decay + payload coefficient), recomputes the dynamic RTH threshold
+          from Euclidean distance to the launch station, and checks for thermal detections.
+        </div>
+        <div class="flow-code">
+<span class="kw">async def</span> <span class="fn">simulation_loop</span>() -> <span class="kw">None</span>:
+    <span class="kw">while</span> <span class="kw">True</span>:
+        tick_start = loop.time()
+        <span class="fn">simulation_tick</span>(state)          <span class="cm"># advance all drones</span>
+        <span class="kw">await</span> manager.<span class="fn">broadcast</span>(state.<span class="fn">to_broadcast_payload</span>())
+        <span class="kw">await</span> asyncio.<span class="fn">sleep</span>(<span class="fn">max</span>(<span class="num">0.0</span>, TICK_INTERVAL - elapsed))
+</div>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="flow-dot">🔋</div>
+      <div class="flow-content">
+        <div class="flow-step-num">Step 02</div>
+        <div class="flow-step-title">Dynamic Battery Decay</div>
+        <div class="flow-step-text">
+          Battery drains at the base rate every tick. When a drone is carrying its first-aid payload,
+          an additional payload weight coefficient is applied — modelling increased motor load.
+          RTH is triggered the instant battery falls to or below the dynamically calculated threshold.
+        </div>
+        <div class="flow-code">
+<span class="cm"># Base + payload weight coefficient</span>
+payload_drain = BATTERY_PAYLOAD_COEFFICIENT <span class="kw">if</span> drone.payload_ready <span class="kw">else</span> <span class="num">0.0</span>
+drone.battery = <span class="fn">max</span>(<span class="num">0.0</span>, drone.battery - BATTERY_DECAY_PER_TICK - payload_drain)
+
+<span class="cm"># Dynamic RTH threshold — distance-vector formula</span>
+dist_to_base = <span class="fn">_distance</span>(drone.x_coord, drone.y_coord, base.x, base.y)
+drone.required_return_battery = dist_to_base * <span class="num">0.05</span> + <span class="num">5.0</span>
+</div>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="flow-dot">⚡</div>
+      <div class="flow-content">
+        <div class="flow-step-num">Step 03</div>
+        <div class="flow-step-title">APF Collision Avoidance</div>
+        <div class="flow-step-text">
+          After all drones tick, an Artificial Potential Field repulsion pass runs. A unit vector is
+          computed between drones and a repulsion force proportional to the overlap ratio displaces
+          both units apart, clamped to their sector boundaries.
+        </div>
+        <div class="flow-code">
+<span class="cm"># Compute unit repulsion vector</span>
+ux = (beta.x_coord - alpha.x_coord) / dist
+uy = (beta.y_coord - alpha.y_coord) / dist
+repulse = (overlap / COLLISION_RADIUS) * DRONE_SPEED * <span class="num">0.5</span>
+alpha.x_coord -= ux * repulse   <span class="cm"># push alpha away</span>
+beta.x_coord  += ux * repulse   <span class="cm"># push beta away</span>
+</div>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="flow-dot">🚨</div>
+      <div class="flow-content">
+        <div class="flow-step-num">Step 04</div>
+        <div class="flow-step-title">Thermal Detection → SURVIVOR_FOUND Trigger</div>
+        <div class="flow-step-text">
+          When a drone enters the 10 m detection radius of an unfound thermal signature, it marks
+          the survivor found, deploys its payload, and enqueues a structured event to the async LLM
+          queue — without blocking the simulation loop.
+        </div>
+        <div class="flow-code">
+<span class="cm"># Detection — enqueue event, never block sim loop</span>
+event = {
+    <span class="str">"drone_id"</span>: drone.drone_id, <span class="str">"x"</span>: thermal.x,
+    <span class="str">"y"</span>: thermal.y,  <span class="str">"battery"</span>: drone.battery,
+    <span class="str">"situation"</span>: <span class="str">"Heat sig near collapsed structure…"</span>
+}
+llm_event_queue.<span class="fn">put_nowait</span>(event)
+</div>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="flow-dot">🤖</div>
+      <div class="flow-content">
+        <div class="flow-step-num">Step 05</div>
+        <div class="flow-step-title">AEGIS-COMMANDER — LLM Tactical Directive</div>
+        <div class="flow-step-text">
+          A background coroutine drains the event queue. For each survivor event it calls
+          Groq llama-3.3-70b-versatile with a strict system prompt enforcing exactly 2 sentences:
+          a drone directive and a ground team rendezvous order. The response is injected into
+          the mission log and broadcast immediately.
+        </div>
+        <div class="flow-code">
+<span class="cm"># System prompt enforces structured 2-sentence output</span>
+<span class="str">"""
+Sentence 1 → "Priority: HIGH/CRITICAL. [drone action + coords]"
+Sentence 2 → "Ground Command: [medical team + callsign rendezvous]"
+"""</span>
+
+decision = <span class="kw">await</span> <span class="fn">get_llm_tactical_decision</span>(**event)
+state.<span class="fn">log</span>(<span class="str">f"🤖 [AEGIS-COMMANDER] </span>{decision}<span class="str">"</span>)
+<span class="kw">await</span> manager.<span class="fn">broadcast</span>(state.<span class="fn">to_broadcast_payload</span>())
+</div>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="flow-dot">📡</div>
+      <div class="flow-content">
+        <div class="flow-step-num">Step 06</div>
+        <div class="flow-step-title">ESP32 Mock Bridge — ESP-NOW Mesh Packets</div>
+        <div class="flow-step-text">
+          A parallel coroutine simulates the ESP32 base station transmitting ESP-NOW telemetry
+          frames at 1 Hz. Each burst emits per-node packets with realistic RSSI, sequence numbers,
+          and the full drone state — drop-in replaceable with a real pyserial port in the field.
+        </div>
+        <div class="flow-code">
+packet = {
+    <span class="str">"node_id"</span>: drone.drone_id,
+    <span class="str">"rssi_dbm"</span>: random.<span class="fn">randint</span>(<span class="num">-80</span>, <span class="num">-45</span>),
+    <span class="str">"packet_seq"</span>: packet_seq,
+    <span class="str">"x"</span>: drone.x_coord,  <span class="str">"battery"</span>: drone.battery
+}
+state.<span class="fn">log</span>(<span class="str">f"📡 [ESP32-RX] SEQ#{packet_seq:05d} | …"</span>)
+</div>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="flow-dot">🖥️</div>
+      <div class="flow-content">
+        <div class="flow-step-num">Step 07</div>
+        <div class="flow-step-title">WebSocket → Live Dashboard</div>
+        <div class="flow-step-text">
+          Every tick broadcasts a JSON frame to all authenticated WebSocket clients.
+          The Next.js dashboard renders the radar grid, drone telemetry cards, mission log,
+          and launch station control in real time. On close code 1008 (invalid token) the
+          frontend auto-clears the session and returns to the login screen.
+        </div>
+        <div class="flow-code">
+<span class="cm">// Frontend — JWT-gated WebSocket connection</span>
+<span class="kw">const</span> url = <span class="str">`${WS_BASE}/ws/telemetry?token=${</span><span class="fn">encodeURIComponent</span>(jwt)<span class="str">}`</span>;
+<span class="kw">const</span> ws  = <span class="kw">new</span> <span class="fn">WebSocket</span>(url);
+ws.onmessage = (e) => <span class="fn">setFrame</span>(<span class="fn">JSON.parse</span>(e.data));
+<span class="cm">// 1008 = token rejected → force logout</span>
+<span class="kw">if</span> (event.code === <span class="num">1008</span>) { sessionStorage.<span class="fn">removeItem</span>(<span class="str">"aegis_jwt"</span>); }
+</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     LIVE SIMULATION
+════════════════════════════════════════════════════════════════════ -->
+<section id="simulation">
+  <div class="section-label">
+    <span class="section-num">04</span>
+    <h2 class="section-title">Live Simulation Preview</h2>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="sim-wrap">
+    <canvas id="simCanvas" width="600" height="600"></canvas>
+    <div class="sim-legend">
+      <div class="sim-legend-item"><div class="sim-dot" style="background:#00f5ff;box-shadow:0 0 6px #00f5ff"></div> Aegis-Alpha</div>
+      <div class="sim-legend-item"><div class="sim-dot" style="background:#00cfff;box-shadow:0 0 6px #00cfff"></div> Aegis-Beta</div>
+      <div class="sim-legend-item"><div class="sim-dot" style="background:#ff2020;box-shadow:0 0 6px #ff2020"></div> Thermal Signature</div>
+      <div class="sim-legend-item"><div class="sim-dot" style="background:#39ff14;box-shadow:0 0 6px #39ff14"></div> Survivor Found</div>
+      <div class="sim-legend-item"><div class="sim-dot" style="background:#f59e0b;box-shadow:0 0 6px #f59e0b;transform:rotate(45deg)"></div> Launch Station</div>
+    </div>
+    <p style="font-size:10px;color:rgba(0,245,255,0.25);letter-spacing:0.2em;text-transform:uppercase;text-align:center;">
+      Live simulation running in-browser · 10 Hz · Drones sweep assigned sectors · Thermals spawn every 15s
+    </p>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     FEATURES
+════════════════════════════════════════════════════════════════════ -->
+<section id="features">
+  <div class="section-label">
+    <span class="section-num">05</span>
+    <h2 class="section-title">Core Feature Set</h2>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="feat-grid">
+    <div class="feat-card">
+      <div class="feat-icon">🔄</div>
+      <div class="feat-title">10 Hz Async Engine</div>
+      <div class="feat-text">FastAPI + asyncio background coroutine runs at exactly 10 Hz with drift compensation. In-memory SystemState tracks all drones, thermals, and survivors without any database round trips.</div>
+      <div class="feat-status">COMPLETED</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🔋</div>
+      <div class="feat-title">Dynamic Battery Model</div>
+      <div class="feat-text">Base decay + payload weight coefficient. RTH threshold computed per-tick as <code style="color:var(--cyan)">dist × 0.05 + 5.0</code> — the drone starts returning the instant it can no longer guarantee safe homecoming.</div>
+      <div class="feat-status">COMPLETED</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">⚡</div>
+      <div class="feat-title">APF Collision Avoidance</div>
+      <div class="feat-text">Artificial Potential Field unit-vector repulsion. When drones close within 50 m, a force scaled by overlap ratio pushes both apart — sector boundaries enforced post-correction.</div>
+      <div class="feat-status">COMPLETED</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🤖</div>
+      <div class="feat-title">Agentic LLM Commander</div>
+      <div class="feat-text">SURVIVOR_FOUND triggers an asyncio queue event. AEGIS-COMMANDER (Groq llama-3.3-70b) returns a structured 2-sentence tactical directive — drone action + ground team rendezvous — in under a second.</div>
+      <div class="feat-status">COMPLETED</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">📡</div>
+      <div class="feat-title">ESP32 Mock Bridge</div>
+      <div class="feat-text">Parallel coroutine simulates ESP-NOW mesh telemetry at 1 Hz with realistic RSSI (−80 to −45 dBm) and sequence numbers. Drop-in replaceable with a real pyserial port on COM3/ttyUSB0 in field deployment.</div>
+      <div class="feat-status">COMPLETED</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">👁️</div>
+      <div class="feat-title">Edge Vision Pipeline</div>
+      <div class="feat-text">Standalone YOLOv8n + OpenCV script. Filters exclusively for COCO class 0 (person) with confidence ≥ 0.65. HUD bounding boxes, corner accents, FPS overlay, and terminal HUMAN_DETECTED alerts.</div>
+      <div class="feat-status">COMPLETED</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🔒</div>
+      <div class="feat-title">JWT Security Layer</div>
+      <div class="feat-text">python-jose + passlib/bcrypt. Every REST endpoint and WebSocket connection gated by HS256 JWT. Close code 1008 on missing/invalid token. SessionStorage (not localStorage) on the frontend.</div>
+      <div class="feat-status">COMPLETED</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">🗺️</div>
+      <div class="feat-title">Operator Launch Control</div>
+      <div class="feat-text">Human-in-the-loop launch station panel. Field operator sets calamity zone focus coordinates before deployment. POST /launch-station updates all drone RTH targets live; rendered as a diamond marker on the radar grid.</div>
+      <div class="feat-status">COMPLETED</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">⚙️</div>
+      <div class="feat-title">Agnostic Middleware Layer</div>
+      <div class="feat-text">Every drone broadcast carries the OS identity string: <em>"Aegis Agnostic Core OS Override via ESP-NOW Mesh"</em> — designed so the backend can slot in real MAVLink or DJI SDK telemetry with zero frontend changes.</div>
+      <div class="feat-status">COMPLETED</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     SECURITY
+════════════════════════════════════════════════════════════════════ -->
+<section id="security">
+  <div class="section-label">
+    <span class="section-num">06</span>
+    <h2 class="section-title">Security Hardening</h2>
+    <div class="section-line"></div>
+  </div>
+
+  <div class="security-grid">
+    <div class="sec-item">
+      <div class="sec-check">✓</div>
+      <div>
+        <div class="sec-title">JWT Bearer Tokens</div>
+        <div class="sec-text">HS256 tokens issued by POST /token. 60-minute expiry. Signed with a server-side secret loaded from environment variables.</div>
+      </div>
+    </div>
+    <div class="sec-item">
+      <div class="sec-check">✓</div>
+      <div>
+        <div class="sec-title">bcrypt Password Hashing</div>
+        <div class="sec-text">passlib CryptContext with bcrypt scheme. Passwords are hashed at startup — never stored in plaintext. Timing-safe verify() used for comparison.</div>
+      </div>
+    </div>
+    <div class="sec-item">
+      <div class="sec-check">✓</div>
+      <div>
+        <div class="sec-title">WebSocket Auth Gate</div>
+        <div class="sec-text">Token validated before ws.accept() is ever called. Invalid or missing token → close code 1008 Policy Violation. No data leaks on unauthenticated connections.</div>
+      </div>
+    </div>
+    <div class="sec-item">
+      <div class="sec-check">✓</div>
+      <div>
+        <div class="sec-title">Session-Scoped Storage</div>
+        <div class="sec-text">JWT stored in sessionStorage (not localStorage). Token is cleared on tab close, explicit logout, or 1008 server rejection. No persistent credential exposure.</div>
+      </div>
+    </div>
+    <div class="sec-item">
+      <div class="sec-check">✓</div>
+      <div>
+        <div class="sec-title">Secure Login Modal</div>
+        <div class="sec-text">Full-screen overlay gating the entire dashboard. POSTs credentials as application/x-www-form-urlencoded to match FastAPI's OAuth2PasswordRequestForm. Error messages do not leak whether user or password was wrong.</div>
+      </div>
+    </div>
+    <div class="sec-item">
+      <div class="sec-check">✓</div>
+      <div>
+        <div class="sec-title">Render.com Auto-Secret</div>
+        <div class="sec-text">render.yaml uses generateValue: true for AEGIS_SECRET_KEY so each deployment gets a unique cryptographic secret. GROQ_API_KEY is environment-injected — never in source.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     STACK
+════════════════════════════════════════════════════════════════════ -->
+<section id="stack">
+  <div class="section-label">
+    <span class="section-num">07</span>
+    <h2 class="section-title">Technology Stack</h2>
+    <div class="section-line"></div>
+  </div>
+
+  <table class="stack-table">
+    <thead>
+      <tr>
+        <th>Component</th>
+        <th>Technology</th>
+        <th>Role</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>Backend Framework</td><td>FastAPI 0.115 + Uvicorn 0.32</td><td>Async HTTP, WebSocket, CORS, dependency injection</td></tr>
+      <tr><td>Simulation Engine</td><td>Python asyncio + dataclasses</td><td>10 Hz event loop, in-memory state, drone physics</td></tr>
+      <tr><td>Agentic AI</td><td>Groq SDK · llama-3.3-70b-versatile</td><td>Structured tactical directive generation on survivor events</td></tr>
+      <tr><td>JWT Auth</td><td>python-jose[cryptography] + passlib[bcrypt]</td><td>Token issue, validation, password hashing</td></tr>
+      <tr><td>Frontend</td><td>Next.js 15 · React 19 · TypeScript</td><td>Real-time dashboard, radar canvas, telemetry cards</td></tr>
+      <tr><td>Styling</td><td>Tailwind CSS · Geist Mono font</td><td>Cyber-military HUD aesthetic</td></tr>
+      <tr><td>Real-time Transport</td><td>WebSockets (RFC 6455)</td><td>10 Hz bidirectional JSON telemetry stream</td></tr>
+      <tr><td>Edge Vision</td><td>Ultralytics YOLOv8n · OpenCV</td><td>Standalone person detection pipeline, conf ≥ 0.65</td></tr>
+      <tr><td>RF Simulation</td><td>asyncio coroutine (mock pyserial)</td><td>ESP-NOW mesh packet bridge at 1 Hz</td></tr>
+      <tr><td>Deployment — API</td><td>Render.com (render.yaml blueprint)</td><td>Auto-deploy from master, env-injected secrets</td></tr>
+      <tr><td>Deployment — UI</td><td>Vercel (vercel.json)</td><td>Edge-deployed Next.js, auto HTTPS</td></tr>
+      <tr><td>Environment</td><td>python-dotenv · .env.example</td><td>Local dev secret management</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<div class="divider"></div>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-title">AEGIS SWARM v2.0</div>
+  <div class="footer-sub" style="margin-bottom:8px;">
+    Agnostic Middleware · ESP-NOW Mesh · 1000 × 1000 m Calamity Zone · JWT Secured · 10 Hz Stream
+  </div>
+  <div class="footer-sub">
+    FastAPI · Next.js · Groq LLM · YOLOv8 · WebSocket · Render · Vercel
+  </div>
+</footer>
+
+</div><!-- .page -->
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════════════════════════════ -->
+<script>
+/* ── Starfield ────────────────────────────────────────────────────────── */
+(function() {
+  const c = document.getElementById('starfield');
+  const ctx = c.getContext('2d');
+  let W, H, stars = [];
+  function resize() {
+    W = c.width  = window.innerWidth;
+    H = c.height = window.innerHeight;
+  }
+  function initStars() {
+    stars = [];
+    for (let i = 0; i < 180; i++) {
+      stars.push({
+        x: Math.random() * W, y: Math.random() * H,
+        r: Math.random() * 1.2 + 0.2,
+        o: Math.random() * 0.5 + 0.1,
+        s: Math.random() * 0.3 + 0.05,
+        p: Math.random() * Math.PI * 2,
+      });
+    }
+  }
+  function drawStars(t) {
+    ctx.clearRect(0, 0, W, H);
+    for (const s of stars) {
+      const o = s.o + 0.3 * Math.sin(t * s.s + s.p);
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(0,245,255,${o.toFixed(2)})`;
+      ctx.fill();
+    }
+    requestAnimationFrame(ts => drawStars(ts / 1000));
+  }
+  resize();
+  initStars();
+  window.addEventListener('resize', () => { resize(); initStars(); });
+  drawStars(0);
+})();
+
+/* ── Intersection observer for flow steps ─────────────────────────────── */
+(function() {
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        setTimeout(() => e.target.classList.add('visible'), i * 80);
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.15 });
+  document.querySelectorAll('.flow-step').forEach(el => io.observe(el));
+})();
+
+/* ── Mini simulation canvas ───────────────────────────────────────────── */
+(function() {
+  const canvas = document.getElementById('simCanvas');
+  if (!canvas) return;
+  const ctx  = canvas.getContext('2d');
+  const SIZE = 600;
+  const W    = 1000;  // world units
+  const SC   = SIZE / W;
+  const toC  = (x, y) => ({ cx: x * SC, cy: SIZE - y * SC });
+
+  // State
+  const launchStation = { x: 500, y: 500 };
+  const drones = [
+    { id: 'α', x: 500, y: 500, bat: 100, status: 'Searching',
+      sxMin: 0,   sxMax: 499, dir: 1, row: 0, color: '#00f5ff',
+      trail: [], assisting: 0, rthFloor: 5 },
+    { id: 'β', x: 500, y: 500, bat: 95,  status: 'Searching',
+      sxMin: 500, sxMax: 999, dir: 1, row: 0, color: '#00cfff',
+      trail: [], assisting: 0, rthFloor: 5 },
+  ];
+  const thermals  = [];
+  const survivors = [];
+  let   thermalId = 0;
+  let   tick      = 0;
+  let   lastSpawn = 0;
+  let   pulse     = 0;
+  const SPEED     = 5;
+  const COL_R     = 50;
+  const DET_R     = 30;
+  const SPAWN_INT = 150; // ticks
+
+  function dist(x1,y1,x2,y2) { return Math.hypot(x2-x1,y2-y1); }
+  function moveTo(d,tx,ty) {
+    const dx=tx-d.x, dy=ty-d.y, dd=Math.hypot(dx,dy);
+    if(dd<1){d.x=tx;d.y=ty;return;}
+    d.x+=dx/dd*SPEED; d.y+=dy/dd*SPEED;
+  }
+  function sweep(d) {
+    d.x += SPEED * d.dir;
+    if(d.x >= d.sxMax){ d.x=d.sxMax; d.dir=-1; d.row+=20; if(d.row>999)d.row=0; d.y=d.row; }
+    else if(d.x <= d.sxMin){ d.x=d.sxMin; d.dir=1; d.row+=20; if(d.row>999)d.row=0; d.y=d.row; }
+  }
+
+  function simTick() {
+    tick++;
+    // Spawn thermal
+    if (tick - lastSpawn >= SPAWN_INT && thermals.filter(t=>!t.found).length < 4) {
+      lastSpawn = tick;
+      thermals.push({ id: ++thermalId, x: Math.random()*999, y: Math.random()*999, found: false });
+    }
+    for (const d of drones) {
+      d.bat = Math.max(0, d.bat - 0.03 - (d.status==='Searching'&&d.bat>50?0.01:0));
+      const db = dist(d.x,d.y,launchStation.x,launchStation.y);
+      d.rthFloor = db*0.05+5;
+      if(d.bat<=d.rthFloor && d.status!=='Returning') d.status='Returning';
+      if(d.status==='Returning'){
+        moveTo(d,launchStation.x,launchStation.y);
+        if(dist(d.x,d.y,launchStation.x,launchStation.y)<3){
+          d.bat=100; d.status='Searching'; d.row=0; d.dir=1; d.x=d.sxMin; d.y=launchStation.y;
+        }
+      } else if(d.status==='Assisting'){
+        d.assisting++;
+        if(d.assisting>=30){ d.status='Searching'; d.assisting=0; }
+      } else {
+        sweep(d);
+        for(const t of thermals){
+          if(!t.found && dist(d.x,d.y,t.x,t.y)<=DET_R){
+            t.found=true; d.status='Assisting'; d.assisting=0;
+            survivors.push({x:t.x,y:t.y});
+          }
+        }
+      }
+      // Trail
+      d.trail.push({x:d.x,y:d.y});
+      if(d.trail.length>50) d.trail.shift();
+    }
+    // Collision avoidance
+    const [a,b] = drones;
+    const dd = dist(a.x,a.y,b.x,b.y);
+    if(dd>0.01&&dd<COL_R){
+      const ov=COL_R-dd, rp=(ov/COL_R)*SPEED*0.5;
+      const ux=(b.x-a.x)/dd, uy=(b.y-a.y)/dd;
+      a.x-=ux*rp; a.y-=uy*rp;
+      b.x+=ux*rp; b.y+=uy*rp;
+    }
+    for(const d of drones){
+      d.x=Math.max(d.sxMin,Math.min(d.sxMax,d.x));
+      d.y=Math.max(0,Math.min(999,d.y));
+    }
+  }
+
+  function draw() {
+    pulse += 0.04;
+    simTick();
+    ctx.clearRect(0,0,SIZE,SIZE);
+
+    // BG
+    ctx.fillStyle='#060a0f'; ctx.fillRect(0,0,SIZE,SIZE);
+
+    // Grid
+    for(let i=0;i<=10;i++){
+      const p=i/10*SIZE;
+      ctx.strokeStyle = i===5 ? 'rgba(0,220,255,0.2)' : 'rgba(0,180,210,0.06)';
+      ctx.lineWidth   = i===5 ? 1 : 0.5;
+      ctx.beginPath(); ctx.moveTo(p,0); ctx.lineTo(p,SIZE); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0,p); ctx.lineTo(SIZE,p); ctx.stroke();
+    }
+
+    // Sector divider
+    ctx.save();
+    ctx.strokeStyle='rgba(0,245,255,0.3)'; ctx.lineWidth=1.5;
+    ctx.setLineDash([6,4]);
+    ctx.beginPath(); ctx.moveTo(SIZE/2,0); ctx.lineTo(SIZE/2,SIZE); ctx.stroke();
+    ctx.restore();
+
+    // Sector labels
+    ctx.font='bold 10px monospace'; ctx.fillStyle='rgba(0,245,255,0.25)'; ctx.textAlign='center';
+    ctx.fillText('SECTOR A',SIZE/4,16); ctx.fillText('SECTOR B',SIZE*3/4,16);
+
+    // Launch station
+    const ls = toC(launchStation.x,launchStation.y);
+    ctx.save();
+    const lp = 0.5+0.5*Math.abs(Math.sin(pulse*0.7));
+    ctx.globalAlpha=(1-lp)*0.5; ctx.strokeStyle='#f59e0b'; ctx.lineWidth=1.5;
+    ctx.shadowColor='#f59e0b'; ctx.shadowBlur=14;
+    ctx.beginPath(); ctx.arc(ls.cx,ls.cy,5+lp*12,0,Math.PI*2); ctx.stroke();
+    ctx.globalAlpha=1; ctx.fillStyle='#f59e0b'; ctx.shadowBlur=8;
+    ctx.beginPath(); ctx.moveTo(ls.cx,ls.cy-5); ctx.lineTo(ls.cx+5,ls.cy);
+    ctx.lineTo(ls.cx,ls.cy+5); ctx.lineTo(ls.cx-5,ls.cy); ctx.closePath(); ctx.fill();
+    ctx.restore();
+
+    // Thermals
+    for(const t of thermals){
+      if(t.found) continue;
+      const {cx,cy}=toC(t.x,t.y);
+      const tf=0.5+0.5*Math.abs(Math.sin(pulse+t.id));
+      ctx.save();
+      ctx.globalAlpha=(1-tf)*0.7; ctx.strokeStyle='#ff2020'; ctx.lineWidth=1;
+      ctx.shadowColor='#ff2020'; ctx.shadowBlur=12;
+      ctx.beginPath(); ctx.arc(cx,cy,4+tf*10,0,Math.PI*2); ctx.stroke();
+      ctx.globalAlpha=0.9; ctx.fillStyle='rgba(255,32,32,0.3)'; ctx.shadowBlur=14;
+      ctx.beginPath(); ctx.arc(cx,cy,5,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#ff2020'; ctx.globalAlpha=1; ctx.shadowBlur=6;
+      ctx.beginPath(); ctx.arc(cx,cy,3,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+
+    // Survivors
+    for(const s of survivors){
+      const {cx,cy}=toC(s.x,s.y);
+      ctx.save();
+      ctx.shadowColor='#39ff14'; ctx.shadowBlur=10;
+      ctx.fillStyle='rgba(57,255,20,0.3)';
+      ctx.beginPath(); ctx.arc(cx,cy,7,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle='#39ff14'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.moveTo(cx-5,cy); ctx.lineTo(cx+5,cy); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx,cy-5); ctx.lineTo(cx,cy+5); ctx.stroke();
+      ctx.fillStyle='#39ff14';
+      ctx.beginPath(); ctx.arc(cx,cy,2.5,0,Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+
+    // Trails + drones
+    for(const d of drones){
+      // Trail
+      const trail=d.trail;
+      for(let i=1;i<trail.length;i++){
+        const {cx:x1,cy:y1}=toC(trail[i-1].x,trail[i-1].y);
+        const {cx:x2,cy:y2}=toC(trail[i].x,trail[i].y);
+        ctx.save();
+        ctx.globalAlpha=(i/trail.length)*0.3;
+        ctx.strokeStyle=d.color; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+        ctx.restore();
+      }
+      // Drone body
+      const {cx,cy}=toC(d.x,d.y);
+      ctx.save();
+      ctx.translate(cx,cy);
+      ctx.shadowColor=d.color; ctx.shadowBlur=18;
+      ctx.fillStyle=d.color+'40';
+      ctx.beginPath(); ctx.arc(0,0,10,0,Math.PI*2); ctx.fill();
+      const sz=7;
+      ctx.fillStyle=d.color;
+      ctx.beginPath();
+      ctx.moveTo(sz,0); ctx.lineTo(-sz*.7,sz*.7); ctx.lineTo(-sz*.7,-sz*.7);
+      ctx.closePath(); ctx.fill();
+      // Status ring
+      if(d.status==='Returning'){
+        ctx.globalAlpha=0.5+0.5*Math.abs(Math.sin(pulse*2));
+        ctx.strokeStyle='#ffaa00'; ctx.lineWidth=1.5; ctx.shadowColor='#ffaa00';
+      } else if(d.status==='Assisting'){
+        ctx.globalAlpha=0.6+0.4*Math.abs(Math.sin(pulse));
+        ctx.strokeStyle='#39ff14'; ctx.lineWidth=1.5; ctx.shadowColor='#39ff14';
+      } else {
+        ctx.strokeStyle=d.color; ctx.lineWidth=1;
+      }
+      ctx.beginPath(); ctx.arc(0,0,11,0,Math.PI*2); ctx.stroke();
+      ctx.restore();
+      // Label
+      ctx.save();
+      ctx.font='9px monospace'; ctx.fillStyle=d.color;
+      ctx.shadowColor=d.color; ctx.shadowBlur=6; ctx.textAlign='center';
+      ctx.fillText(d.id,cx,cy-15);
+      ctx.restore();
+    }
+
+    // Tick watermark
+    ctx.save();
+    ctx.font='9px monospace'; ctx.fillStyle='rgba(0,245,255,0.15)';
+    ctx.textAlign='right';
+    ctx.fillText('TICK '+String(tick).padStart(6,'0'),SIZE-6,SIZE-6);
+    ctx.restore();
+
+    requestAnimationFrame(draw);
+  }
+
+  requestAnimationFrame(draw);
+})();
+</script>
+</body>
+</html>
